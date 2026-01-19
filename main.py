@@ -11,42 +11,37 @@ except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "flask"])
     from flask import Flask
 
-# --- WEB SERVER FOR RENDER (Fast Response) ---
+# --- WEB SERVER FOR RENDER ---
 web_app = Flask(__name__)
 
 @web_app.route('/')
 def home():
-    return "Bot is Running Fast & Stable!"
+    return "Bot is Running with Environment Variables!"
 
 def run_web():
-    # Render hamesha port 10000 dhoondta hai
     web_app.run(host='0.0.0.0', port=10000)
 
-# --- BOT CONFIGURATION ---
-API_ID = 32348580
-API_HASH = "ec7420fcd7ee27712fc8ed7334d7bc3e"
-SESSION = "BQHtmaQAuwrsgGW5ZQEDE47TCrF6rWYJz-DozY0LNhSEYFg6uLMzBeV2L-otqHkuG6H9m-ZbONzHKpzidL6FKaKkq8vrhYVZYra635OKzeJ8RZrtnLpxcV_UXOIqSjv (Aapki Puri Session String)"
-SUDOERS = [7876183821] # Aapki ID
+# --- CONFIGURATION (Fetching from Render Environment) ---
+# Agar Render pe variable nahi milega toh ye default value uthayega
+API_ID = int(os.environ.get("API_ID", 32348580))
+API_HASH = os.environ.get("API_HASH", "ec7420fcd7ee27712fc8ed7334d7bc3e")
+SESSION = os.environ.get("SESSION") 
+SUDOERS = [7876183821]
 
 from pyrogram import Client, filters
+
+# Session check logic
+if not SESSION:
+    print(">> [ERROR] SESSION variable nahi mila! Render dashboard check karein.")
+    sys.exit(1)
 
 app = Client(
     name="MusicPlayer",
     api_id=API_ID,
     api_hash=API_HASH,
     session_string=SESSION,
-    plugins=dict(root="plugins") # Aapke saare commands yahan se load honge
+    plugins=dict(root="plugins")
 )
-
-# --- REACTION & EDIT PROTECTION ---
-@app.on_edited_message(filters.group & ~filters.me)
-async def delete_edited_handler(client, message):
-    if message.from_user and message.from_user.id in SUDOERS:
-        return
-    try:
-        await message.delete()
-    except:
-        pass
 
 # --- STARTUP LOGIC ---
 async def start_services():
@@ -56,9 +51,7 @@ async def start_services():
     print(">> Starting Userbot Engine...")
     try:
         await app.start()
-        # Kitne plugins load hue check karne ke liye:
-        print(f">> [SUCCESS] {len(app.plugins) if app.plugins else 0} Plugins Loaded!")
-        print(">> BOT IS LIVE AND FAST!")
+        print(f">> [SUCCESS] Bot Live with Session!")
     except Exception as e:
         print(f">> [ERROR] Startup failed: {e}")
         return
